@@ -1,462 +1,735 @@
-let currentData = null;
+/**
+ * Main JS for Hanoi Map MST Application
+ */
+
+let hanoiMap = null;
+let selectedLocations = [];
+let locationMarkers = {};
 let currentResult = null;
-let isPlaying = false;
-let currentStep = 0;
-let animationInterval = null;
+let mstEdges = [];
+// Simplified - no selection needed
 
+// Initialize the application - NON-BLOCKING
 document.addEventListener('DOMContentLoaded', function() {
-    loadInitialData();
-    setupEventListeners();
-});
-
-function setupEventListeners() {
-    const algorithmSelect = document.getElementById('algorithm-select');
-    if (algorithmSelect) {
-        algorithmSelect.addEventListener('change', updatePseudocode);
+    if (typeof updateLoadingProgress === 'function') {
+        updateLoadingProgress('Main.js - DOM Content Loaded');
     }
+    console.log('DOM Content Loaded - starting initialization');
     
-    updatePseudocode();
-}
-
-async function loadInitialData() {
+    // Initialize immediately without delay
     try {
-        const response = await fetch('/api/data');
-        const data = await response.json();
-        currentData = data;
+        setupEventListeners();
+        if (typeof updateLoadingProgress === 'function') {
+            updateLoadingProgress('Event Listeners Setup Complete');
+        }
+        console.log('Event listeners setup complete');
         
-        renderGraph(data);
-        renderCostMatrix(data.cost_matrix);
+        // Initialize map in next tick to prevent blocking
+        setTimeout(function() {
+            initializeMapSafely();
+        }, 50);
         
     } catch (error) {
-        console.error('Error loading initial data:', error);
-        showAlert('Lỗi khi tải dữ liệu ban đầu', 'danger');
+        console.error('Critical initialization error:', error);
+        if (typeof updateLoadingProgress === 'function') {
+            updateLoadingProgress('Critical Initialization Error', false);
+        }
+    }
+});
+
+// Safe map initialization that won't block loading
+function initializeMapSafely() {
+    if (typeof updateLoadingProgress === 'function') {
+        updateLoadingProgress('Starting Map Initialization');
+    }
+    
+    try {
+        initializeMap();
+        loadLocationData();
+    } catch (error) {
+        console.error('Map initialization error:', error);
+        if (typeof updateLoadingProgress === 'function') {
+            updateLoadingProgress('Map Initialization Failed', false);
+        }
+        // Show error but don't block the app
+        showAlert('Lỗi khởi tạo bản đồ - vui lòng thử lại', 'warning');
     }
 }
 
-function renderCostMatrix(costMatrix) {
-    const container = document.getElementById('cost-matrix');
-    if (!container) return;
-    
-    const vertices = Object.keys(costMatrix).sort();
-    let html = '<div class="table-responsive"><table class="table table-sm table-bordered">';
-    
-    html += '<thead><tr><th></th>';
-    vertices.forEach(v => {
-        html += `<th class="text-center">${v}</th>`;
-    });
-    html += '</tr></thead><tbody>';
-    
-    vertices.forEach(u => {
-        html += `<tr><th>${u}</th>`;
-        vertices.forEach(v => {
-            const cost = costMatrix[u][v];
-            const isEditable = cost !== 0 && cost !== Infinity;
-            
-            if (cost === 0) {
-                html += '<td class="text-center text-muted">-</td>';
-            } else if (cost === Infinity) {
-                html += '<td class="text-center text-muted">∞</td>';
-            } else {
-                html += `<td class="text-center">
-                    <input type="number" class="form-control form-control-sm text-center cost-input" 
-                           value="${cost}" step="0.1" min="0" 
-                           data-edge="${u}-${v}" ${isEditable ? '' : 'readonly'}>
-                </td>`;
+/**
+ * Initialize the Leaflet map
+ */
+function initializeMap() {
+    try {
+        // Check if Leaflet is loaded
+        if (typeof L === 'undefined') {
+            console.error('Leaflet not loaded yet');
+            if (typeof updateLoadingProgress === 'function') {
+                updateLoadingProgress('Leaflet Not Loaded - Retrying', false);
             }
-        });
-        html += '</tr>';
+            // Retry after a short delay
+            setTimeout(initializeMapSafely, 500);
+            return;
+        } else {
+            if (typeof updateLoadingProgress === 'function') {
+                updateLoadingProgress('Leaflet Library Loaded');
+            }
+        }
+        
+        // Check if map container exists
+        const mapContainer = document.getElementById('hanoi-map');
+        if (!mapContainer) {
+            console.error('Map container not found');
+            if (typeof updateLoadingProgress === 'function') {
+                updateLoadingProgress('Map Container Not Found', false);
+            }
+            return;
+        } else {
+            if (typeof updateLoadingProgress === 'function') {
+                updateLoadingProgress('Map Container Found');
+            }
+        }
+        
+        // Prevent multiple initialization
+        if (hanoiMap) {
+            console.log('Map already initialized');
+            return;
+        }
+        
+        console.log('Creating Leaflet map...');
+        if (typeof updateLoadingProgress === 'function') {
+            updateLoadingProgress('Creating Leaflet Map Instance');
+        }
+        
+        // Center on Hanoi
+        hanoiMap = L.map('hanoi-map').setView([21.0285, 105.8542], 12);
+        
+        if (typeof updateLoadingProgress === 'function') {
+            updateLoadingProgress('Adding Map Tiles');
+        }
+        
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 18
+        }).addTo(hanoiMap);
+        
+        // Add custom style for dark theme
+        hanoiMap.getContainer().style.filter = 'brightness(0.9) hue-rotate(200deg)';
+        
+        // Remove double-click handler for adding points
+        
+        console.log('Map initialized successfully');
+        if (typeof updateLoadingProgress === 'function') {
+            updateLoadingProgress('Map Initialized Successfully');
+        }
+    } catch (error) {
+        console.error('Error initializing map:', error);
+        // Don't show alert immediately, might be loading issue
+        setTimeout(() => {
+            if (!hanoiMap) {
+                showAlert('Lỗi khởi tạo bản đồ - vui lòng tải lại trang', 'warning');
+            }
+        }, 2000);
+    }
+}
+
+/**
+ * Setup event listeners
+ */
+function setupEventListeners() {
+    // Calculate MST button
+    document.getElementById('calculate-mst')?.addEventListener('click', calculateMST);
+    
+    // Reset button
+    document.getElementById('resetBtn')?.addEventListener('click', resetApplication);
+    
+    // Animation controls
+    document.getElementById('play-pause')?.addEventListener('click', toggleAnimation);
+    document.getElementById('step-forward')?.addEventListener('click', stepForward);
+    document.getElementById('step-backward')?.addEventListener('click', stepBackward);
+    
+    // Speed control buttons
+    document.getElementById('speed-slow')?.addEventListener('click', function() {
+        if (window.animationController) {
+            animationController.setSpeed(3000);
+            showAlert('Đã chọn tốc độ chậm', 'info');
+        }
     });
     
-    html += '</tbody></table></div>';
+    document.getElementById('speed-fast')?.addEventListener('click', function() {
+        if (window.animationController) {
+            animationController.setSpeed(1000);
+            showAlert('Đã chọn tốc độ nhanh', 'info');
+        }
+    });
+}
+
+/**
+ * Load restaurant location data from API
+ */
+async function loadLocationData() {
+    if (typeof updateLoadingProgress === 'function') {
+        updateLoadingProgress('Loading Location Data from API');
+    }
+    
+    try {
+        const response = await fetch('/api/data');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        if (typeof updateLoadingProgress === 'function') {
+            updateLoadingProgress('API Response Received');
+        }
+        
+        const data = await response.json();
+        
+        if (data.restaurants) {
+            displayRestaurantMarkers(data.restaurants);
+            // Enable the calculate button
+            updateCalculateButton();
+            console.log('Location data loaded successfully');
+            if (typeof updateLoadingProgress === 'function') {
+                updateLoadingProgress('Restaurant Markers Added');
+            }
+        } else {
+            throw new Error('No restaurant data received');
+        }
+    } catch (error) {
+        console.error('Error loading location data:', error);
+        if (typeof updateLoadingProgress === 'function') {
+            updateLoadingProgress('Failed to Load Location Data', false);
+        }
+        showAlert('Lỗi khi tải dữ liệu địa điểm', 'danger');
+    }
+}
+
+/**
+ * Display restaurant markers on map
+ */
+function displayRestaurantMarkers(restaurants) {
+    try {
+        if (!hanoiMap) {
+            throw new Error('Map not initialized');
+        }
+        
+        Object.keys(restaurants).forEach(id => {
+            const restaurant = restaurants[id];
+            
+            // Validate coordinates
+            if (!restaurant.lat || !restaurant.lng) {
+                console.warn(`Invalid coordinates for restaurant ${id}`);
+                return;
+            }
+            
+            // Create custom icon based on type
+            const icon = L.divIcon({
+                className: `custom-marker ${restaurant.type}`,
+                html: `<div class="marker-content">
+                        <i class="fas ${restaurant.type === 'main' ? 'fa-star' : 'fa-store'}"></i>
+                        <span class="marker-label">${id}</span>
+                       </div>`,
+                iconSize: [40, 40],
+                iconAnchor: [20, 40]
+            });
+            
+            // Create draggable marker (no selection needed)
+            const marker = L.marker([restaurant.lat, restaurant.lng], { 
+                icon: icon,
+                draggable: true // Enable dragging
+            })
+                .bindPopup(`
+                    <div class="popup-content">
+                        <h6>${restaurant.name}</h6>
+                        <p class="mb-1">${restaurant.location}</p>
+                        <small class="text-muted">${restaurant.description}</small>
+                    </div>
+                `);
+            
+            // Add drag handler to update coordinates
+            marker.on('dragend', (e) => updatePointPosition(id, e.target.getLatLng()));
+            
+            // Add to map and store reference
+            marker.addTo(hanoiMap);
+            locationMarkers[id] = marker;
+        });
+        
+        console.log(`Added ${Object.keys(locationMarkers).length} markers to map`);
+    } catch (error) {
+        console.error('Error displaying restaurant markers:', error);
+        showAlert('Lỗi hiển thị markers trên bản đồ', 'danger');
+    }
+}
+
+// Unused selection functions removed
+function toggleLocationSelection(locationId, restaurant) {
+    const index = selectedLocations.indexOf(locationId);
+    
+    if (index === -1) {
+        // Add location
+        selectedLocations.push(locationId);
+        locationMarkers[locationId].getElement().classList.add('selected');
+    } else {
+        // Remove location
+        selectedLocations.splice(index, 1);
+        locationMarkers[locationId].getElement().classList.remove('selected');
+    }
+    
+    updateSelectedLocationsDisplay();
+    updateCalculateButton();
+    
+    if (selectedLocations.length >= 2) {
+        updateLocationSelection();
+    }
+}
+
+/**
+ * Update selected locations display
+ */
+function updateSelectedLocationsDisplay() {
+    const container = document.getElementById('selected-locations');
+    const countSpan = document.getElementById('selected-count');
+    
+    countSpan.textContent = selectedLocations.length;
+    
+    if (selectedLocations.length === 0) {
+        container.innerHTML = '<span class=\"text-muted\">Chưa chọn địa điểm nào</span>';
+    } else {
+        container.innerHTML = selectedLocations.map(id => `
+            <span class=\"badge bg-primary fs-6\">
+                ${id} 
+                <button type=\"button\" class=\"btn-close btn-close-white ms-1\" 
+                        onclick=\"removeLocation('${id}')\" aria-label=\"Close\"></button>
+            </span>
+        `).join('');
+    }
+}
+
+/**
+ * Remove location from selection
+ */
+function removeLocation(locationId) {
+    const index = selectedLocations.indexOf(locationId);
+    if (index > -1) {
+        selectedLocations.splice(index, 1);
+        locationMarkers[locationId].getElement().classList.remove('selected');
+        updateSelectedLocationsDisplay();
+        updateCalculateButton();
+        
+        if (selectedLocations.length >= 2) {
+            updateLocationSelection();
+        } else {
+            clearDistanceInfo();
+        }
+    }
+}
+
+/**
+ * Update calculate button state
+ */
+function updateCalculateButton() {
+    const button = document.getElementById('calculate-mst');
+    // Always enable the button since we use all points automatically
+    
+    button.disabled = false;
+    
+    button.innerHTML = '<i class=\"fas fa-calculator me-1\"></i>Tính MST cho tất cả điểm';
+}
+
+/**
+ * Update location selection on backend
+ */
+async function updateLocationSelection() {
+    try {
+        const response = await fetch('/api/locations/select', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                locations: selectedLocations
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            displayDistanceInfo(data.costs);
+        } else {
+            console.error('Error updating locations:', data.error);
+        }
+    } catch (error) {
+        console.error('Error updating location selection:', error);
+    }
+}
+
+/**
+ * Display distance information
+ */
+function displayDistanceInfo(costs) {
+    const container = document.getElementById('distances-info');
+    
+    if (Object.keys(costs).length === 0) {
+        container.innerHTML = '<p class=\"text-muted mb-0\">Chọn ít nhất 2 địa điểm để xem khoảng cách</p>';
+        return;
+    }
+    
+    let html = '<div class=\"small\">';
+    Object.entries(costs).forEach(([edge, distance]) => {
+        html += `<div class=\"d-flex justify-content-between mb-1\">
+                    <span>${edge}:</span>
+                    <span class=\"fw-bold text-primary\">${distance} km</span>
+                 </div>`;
+    });
+    html += '</div>';
+    
     container.innerHTML = html;
 }
 
-async function updateCosts() {
-    const costInputs = document.querySelectorAll('.cost-input');
-    const newCosts = {};
-    
-    costInputs.forEach(input => {
-        const edge = input.getAttribute('data-edge');
-        const value = parseFloat(input.value);
-        if (!isNaN(value) && value >= 0) {
-            newCosts[edge] = value;
-        }
-    });
-    
-    try {
-        showLoading(true);
-        const response = await fetch('/api/update_costs', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ costs: newCosts })
-        });
-        
-        const result = await response.json();
-        if (result.success) {
-            showAlert('Cập nhật chi phí thành công!', 'success');
-            await loadInitialData();
-        } else {
-            showAlert('Lỗi: ' + result.error, 'danger');
-        }
-    } catch (error) {
-        console.error('Error updating costs:', error);
-        showAlert('Lỗi khi cập nhật chi phí', 'danger');
-    } finally {
-        showLoading(false);
-    }
+/**
+ * Clear distance information
+ */
+function clearDistanceInfo() {
+    const container = document.getElementById('distances-info');
+    container.innerHTML = '<p class=\"text-muted mb-0\">Chọn ít nhất 2 địa điểm để xem khoảng cách</p>';
 }
 
-async function resetData() {
-    try {
-        showLoading(true);
-        const response = await fetch('/api/reset');
-        const result = await response.json();
-        
-        if (result.success) {
-            showAlert('Đã khôi phục dữ liệu mặc định!', 'info');
-            await loadInitialData();
-        } else {
-            showAlert('Lỗi: ' + result.error, 'danger');
-        }
-    } catch (error) {
-        console.error('Error resetting data:', error);
-        showAlert('Lỗi khi khôi phục dữ liệu', 'danger');
-    } finally {
-        showLoading(false);
-    }
-}
-
-async function runAlgorithm() {
-    const algorithm = document.getElementById('algorithm-select').value;
+/**
+ * Calculate MST for selected locations
+ */
+async function calculateMST() {
+    // Auto use all points - no selection needed
+    
+    const algorithm = document.querySelector('input[name=\"algorithm\"]:checked').value;
     
     try {
-        showLoading(true);
         const response = await fetch('/api/solve', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ 
+            body: JSON.stringify({
                 algorithm: algorithm,
                 start_vertex: 'A'
             })
         });
         
-        const result = await response.json();
-        if (result.success) {
-            currentResult = result.result;
-            currentStep = 0;
+        const data = await response.json();
+        
+        if (data.success) {
+            currentResult = data.result;
+            displayMSTResult(data.result, algorithm);
+            showAnimationControls();
+            drawMSTOnMap(data.result.edges);
             
-            showAlert(`Thuật toán ${algorithm.toUpperCase()} hoàn thành!`, 'success');
-            renderAlgorithmVisualization();
-            updateStepInfo();
-            
-            document.getElementById('results-tab').click();
-            renderMSTResult();
-            renderResultSummary();
-            
-        } else {
-            showAlert('Lỗi: ' + result.error, 'danger');
-        }
-    } catch (error) {
-        console.error('Error running algorithm:', error);
-        showAlert('Lỗi khi chạy thuật toán', 'danger');
-    } finally {
-        showLoading(false);
-    }
-}
-
-function playPause() {
-    if (!currentResult) {
-        showAlert('Chưa có kết quả thuật toán. Vui lòng chạy thuật toán trước!', 'warning');
-        return;
-    }
-    
-    if (isPlaying) {
-        clearInterval(animationInterval);
-        isPlaying = false;
-        document.getElementById('play-icon').className = 'fas fa-play';
-    } else {
-        const speed = parseInt(document.getElementById('speed-select').value);
-        animationInterval = setInterval(() => {
-            if (currentStep < currentResult.steps.length - 1) {
-                stepForward();
-            } else {
-                playPause();
+            // Initialize animation controller
+            if (window.animationController) {
+                animationController.setResult(data.result);
             }
-        }, speed);
-        isPlaying = true;
-        document.getElementById('play-icon').className = 'fas fa-pause';
-    }
-}
-
-function stepForward() {
-    if (!currentResult || currentStep >= currentResult.steps.length - 1) return;
-    
-    currentStep++;
-    updateVisualizationStep();
-    updateStepInfo();
-}
-
-function stepBackward() {
-    if (!currentResult || currentStep <= 0) return;
-    
-    currentStep--;
-    updateVisualizationStep();
-    updateStepInfo();
-}
-
-function resetAnimation() {
-    if (animationInterval) {
-        clearInterval(animationInterval);
-        animationInterval = null;
-    }
-    isPlaying = false;
-    currentStep = 0;
-    document.getElementById('play-icon').className = 'fas fa-play';
-    
-    if (currentResult) {
-        updateVisualizationStep();
-        updateStepInfo();
-    }
-}
-
-function updateVisualizationStep() {
-    if (!currentResult || !currentResult.steps[currentStep]) return;
-    
-    const step = currentResult.steps[currentStep];
-    renderAlgorithmVisualization(step);
-    updateConsoleLog(step);
-}
-
-function updateStepInfo() {
-    if (!currentResult) return;
-    
-    const progressBar = document.getElementById('progress-bar');
-    const stepInfo = document.getElementById('step-info');
-    
-    const progress = ((currentStep + 1) / currentResult.steps.length) * 100;
-    progressBar.style.width = `${progress}%`;
-    stepInfo.textContent = `Bước ${currentStep + 1}/${currentResult.steps.length}`;
-}
-
-function updatePseudocode() {
-    const algorithm = document.getElementById('algorithm-select')?.value || 'kruskal';
-    const pseudocodeDiv = document.getElementById('pseudocode');
-    if (!pseudocodeDiv) return;
-    
-    const pseudocodes = {
-        kruskal: `
-<strong>KRUSKAL(G, w)</strong>
-1. A = ∅
-2. for each vertex v ∈ G.V:
-3.     MAKE-SET(v)
-4. sort edges of G.E by weight w
-5. for each edge (u, v) ∈ G.E:
-6.     if FIND-SET(u) ≠ FIND-SET(v):
-7.         A = A ∪ {(u, v)}
-8.         UNION(u, v)
-9. return A`,
-        
-        prim: `
-<strong>PRIM(G, w, r)</strong>
-1. Q = G.V
-2. for each u ∈ G.V:
-3.     u.key = ∞
-4.     u.π = NIL
-5. r.key = 0
-6. while Q ≠ ∅:
-7.     u = EXTRACT-MIN(Q)
-8.     for each v ∈ G.Adj[u]:
-9.         if v ∈ Q and w(u, v) < v.key:
-10.            v.π = u
-11.            v.key = w(u, v)
-12. return {(v, v.π) : v ∈ G.V - {r}}`
-    };
-    
-    pseudocodeDiv.innerHTML = pseudocodes[algorithm];
-}
-
-function updateConsoleLog(step) {
-    const consoleLog = document.getElementById('console-log');
-    if (!consoleLog) return;
-    
-    const logEntry = document.createElement('div');
-    logEntry.className = `console-entry ${step.accepted ? 'text-success' : 'text-warning'}`;
-    logEntry.innerHTML = `
-        <small class="text-muted">[${currentStep + 1}]</small> 
-        ${step.explanation}
-    `;
-    
-    consoleLog.innerHTML = '';
-    consoleLog.appendChild(logEntry);
-    consoleLog.scrollTop = consoleLog.scrollHeight;
-}
-
-async function compareAlgorithms() {
-    try {
-        showLoading(true);
-        const response = await fetch('/api/compare');
-        const result = await response.json();
-        
-        if (result.success) {
-            renderComparisonResult(result);
         } else {
-            showAlert('Lỗi: ' + result.error, 'danger');
+            showAlert(data.error || 'Lỗi khi tính toán MST', 'danger');
         }
     } catch (error) {
-        console.error('Error comparing algorithms:', error);
-        showAlert('Lỗi khi so sánh thuật toán', 'danger');
-    } finally {
-        showLoading(false);
+        console.error('Error calculating MST:', error);
+        showAlert('Lỗi khi tính toán MST', 'danger');
     }
 }
 
-function renderComparisonResult(result) {
-    const container = document.getElementById('comparison-result');
-    if (!container) return;
+/**
+ * Display MST result
+ */
+function displayMSTResult(result, algorithm) {
+    const container = document.getElementById('mst-result');
+    const panel = document.getElementById('results-panel');
     
-    const html = `
-        <div class="table-responsive">
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>Thuật toán</th>
-                        <th>Chi phí</th>
-                        <th>Số bước</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><strong>Kruskal</strong></td>
-                        <td>${result.kruskal.total_cost.toFixed(1)} triệu</td>
-                        <td>${result.kruskal.steps_count}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Prim</strong></td>
-                        <td>${result.prim.total_cost.toFixed(1)} triệu</td>
-                        <td>${result.prim.steps_count}</td>
-                    </tr>
-                </tbody>
-            </table>
+    let html = `
+        <div class=\"alert alert-success mb-3\">
+            <h6 class=\"mb-2\">
+                <i class=\"fas fa-trophy me-2\"></i>
+                Thuật toán: ${algorithm.toUpperCase()}
+            </h6>
+            <div class=\"row\">
+                <div class=\"col-6\">
+                    <strong>Tổng chi phí:</strong>
+                </div>
+                <div class=\"col-6 text-end\">
+                    <span class=\"badge bg-success fs-6\">${result.total_cost.toFixed(2)} km</span>
+                </div>
+            </div>
         </div>
-        <div class="alert alert-${result.same_result ? 'success' : 'warning'} mt-2">
-            <small>
-                <i class="fas fa-${result.same_result ? 'check' : 'exclamation-triangle'} me-1"></i>
-                ${result.same_result ? 'Cả hai thuật toán cho kết quả giống nhau!' : 'Kết quả khác nhau - cần kiểm tra lại!'}
-            </small>
-        </div>
+        
+        <div class=\"mb-3\">
+            <h6>Các cạnh trong MST:</h6>
+            <div class=\"list-group list-group-flush\">
     `;
     
-    container.innerHTML = html;
-}
-
-function renderResultSummary() {
-    if (!currentResult) return;
-    
-    const container = document.getElementById('result-summary');
-    if (!container) return;
-    
-    const edges = currentResult.edges;
-    let html = '<div class="list-group list-group-flush">';
-    
-    edges.forEach((edge, index) => {
+    result.edges.forEach(edge => {
         html += `
-            <div class="list-group-item d-flex justify-content-between align-items-center">
-                <span>${edge.u} - ${edge.v}</span>
-                <span class="badge bg-primary rounded-pill">${edge.weight} triệu</span>
+            <div class=\"list-group-item d-flex justify-content-between align-items-center p-2\">
+                <span>${edge.u} ↔ ${edge.v}</span>
+                <span class=\"badge bg-primary\">${edge.weight} km</span>
             </div>
         `;
     });
     
-    html += `</div>
-        <div class="mt-3 p-3 bg-light rounded">
-            <div class="row text-center">
-                <div class="col-6">
-                    <div class="h5 text-success">${currentResult.total_cost.toFixed(1)}</div>
-                    <small class="text-muted">Tổng chi phí (triệu VND)</small>
-                </div>
-                <div class="col-6">
-                    <div class="h5 text-info">${edges.length}</div>
-                    <small class="text-muted">Số cạnh trong MST</small>
-                </div>
-            </div>
-        </div>`;
-    
-    container.innerHTML = html;
-    
-    renderBenefitAnalysis();
-}
-
-function renderBenefitAnalysis() {
-    const container = document.getElementById('benefit-analysis');
-    if (!container || !currentResult) return;
-    
-    const mstCost = currentResult.total_cost;
-    const allConnectedCost = calculateAllConnectedCost();
-    const savings = allConnectedCost - mstCost;
-    const savingsPercent = ((savings / allConnectedCost) * 100).toFixed(1);
-    
-    const html = `
-        <div class="row text-center">
-            <div class="col-12">
-                <div class="bg-success text-white p-2 rounded mb-2">
-                    <div class="h6 mb-1">Tiết kiệm</div>
-                    <div class="h5">${savings.toFixed(1)} triệu VND</div>
-                    <small>(${savingsPercent}%)</small>
-                </div>
+    html += `
             </div>
         </div>
-        <small class="text-muted">
-            <i class="fas fa-info-circle me-1"></i>
-            So với kết nối tất cả các cạnh (${allConnectedCost.toFixed(1)} triệu VND)
-        </small>
+        
+        <div class=\"text-center\">
+            <small class=\"text-muted\">${result.steps.length} bước thực hiện</small>
+        </div>
     `;
     
     container.innerHTML = html;
+    panel.style.display = 'block';
 }
 
-function calculateAllConnectedCost() {
-    if (!currentData || !currentData.costs) return 0;
+/**
+ * Draw MST edges on map
+ */
+function drawMSTOnMap(edges) {
+    // Clear existing MST edges
+    clearMSTEdges();
     
-    return Object.values(currentData.costs).reduce((sum, cost) => sum + cost, 0);
-}
-
-function showAlert(message, type = 'info') {
-    const alertsContainer = document.getElementById('alerts-container') || createAlertsContainer();
-    
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-    alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    
-    alertsContainer.appendChild(alertDiv);
-    
-    setTimeout(() => {
-        if (alertDiv.parentNode) {
-            alertDiv.remove();
+    edges.forEach(edge => {
+        const fromMarker = locationMarkers[edge.u];
+        const toMarker = locationMarkers[edge.v];
+        
+        if (fromMarker && toMarker) {
+            const line = L.polyline([
+                fromMarker.getLatLng(),
+                toMarker.getLatLng()
+            ], {
+                color: '#28a745',
+                weight: 4,
+                opacity: 0.8,
+                className: 'mst-edge'
+            }).addTo(hanoiMap);
+            
+            // Add label with distance
+            const midpoint = L.latLngBounds([fromMarker.getLatLng(), toMarker.getLatLng()]).getCenter();
+            const label = L.marker(midpoint, {
+                icon: L.divIcon({
+                    className: 'edge-label',
+                    html: `<span class=\"badge bg-success\">${edge.weight} km</span>`,
+                    iconSize: [60, 20],
+                    iconAnchor: [30, 10]
+                })
+            }).addTo(hanoiMap);
+            
+            mstEdges.push(line, label);
         }
-    }, 5000);
+    });
 }
 
-function createAlertsContainer() {
-    const container = document.createElement('div');
-    container.id = 'alerts-container';
-    container.className = 'position-fixed top-0 end-0 p-3';
-    container.style.zIndex = '9999';
-    document.body.appendChild(container);
-    return container;
+/**
+ * Clear MST edges from map
+ */
+function clearMSTEdges() {
+    mstEdges.forEach(edge => {
+        hanoiMap.removeLayer(edge);
+    });
+    mstEdges = [];
 }
 
-function showLoading(show) {
-    const modal = new bootstrap.Modal(document.getElementById('loadingModal'));
-    if (show) {
-        modal.show();
-    } else {
-        modal.hide();
+/**
+ * Show animation controls and status sections
+ */
+function showAnimationControls() {
+    document.getElementById('animation-panel').style.display = 'block';
+    document.getElementById('current-step-display').style.display = 'block';
+    document.getElementById('console-section').style.display = 'block';
+}
+
+/**
+ * Toggle animation play/pause
+ */
+function toggleAnimation() {
+    if (window.playPause) {
+        playPause();
     }
 }
+
+/**
+ * Animation step forward
+ */
+function stepForward() {
+    if (window.stepForward) {
+        window.stepForward();
+    }
+}
+
+/**
+ * Animation step backward
+ */
+function stepBackward() {
+    if (window.stepBackward) {
+        window.stepBackward();
+    }
+}
+
+/**
+ * Reset application to initial state
+ */
+async function resetApplication() {
+    try {
+        await fetch('/api/reset');
+        
+        // Clear selections
+        selectedLocations = [];
+        currentResult = null;
+        
+        // Update UI
+        Object.values(locationMarkers).forEach(marker => {
+            marker.getElement().classList.remove('selected');
+        });
+        
+        updateSelectedLocationsDisplay();
+        updateCalculateButton();
+        clearDistanceInfo();
+        clearMSTEdges();
+        
+        // Hide panels
+        document.getElementById('animation-panel').style.display = 'none';
+        document.getElementById('results-panel').style.display = 'none';
+        document.getElementById('current-step-display').style.display = 'none';
+        document.getElementById('console-section').style.display = 'none';
+        
+        // Clear console
+        const consoleLog = document.getElementById('console-log');
+        if (consoleLog) {
+            consoleLog.innerHTML = '';
+        }
+        
+        showAlert('Đã reset ứng dụng', 'info');
+        
+    } catch (error) {
+        console.error('Error resetting application:', error);
+        showAlert('Lỗi khi reset ứng dụng', 'danger');
+    }
+}
+
+/**
+ * Show alert message
+ */
+function showAlert(message, type = 'info') {
+    // Create alert element
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 1050; min-width: 300px;';
+    alert.innerHTML = `
+        ${message}
+        <button type=\"button\" class=\"btn-close\" data-bs-dismiss=\"alert\"></button>
+    `;
+    
+    document.body.appendChild(alert);
+    
+    // Auto dismiss after 3 seconds
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.remove();
+        }
+    }, 3000);
+}
+
+// Add custom CSS for markers
+const markerStyle = document.createElement('style');
+markerStyle.textContent = `
+    .custom-marker {
+        background: transparent !important;
+        border: none !important;
+    }
+    
+    .marker-content {
+        background: var(--neon-cyan);
+        color: var(--dark-bg);
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        transition: all 0.2s ease;
+        position: relative;
+    }
+    
+    .marker-content:hover {
+        transform: scale(1.1);
+        box-shadow: 0 4px 12px rgba(0,255,255,0.4);
+    }
+    
+    .custom-marker.selected .marker-content {
+        background: var(--neon-green);
+        transform: scale(1.2);
+        box-shadow: 0 0 20px var(--neon-green);
+    }
+    
+    .custom-marker.main .marker-content {
+        background: var(--neon-orange);
+    }
+    
+    .marker-label {
+        font-size: 14px;
+        font-weight: bold;
+    }
+    
+    .edge-label {
+        background: transparent !important;
+        border: none !important;
+    }
+    
+    .popup-content h6 {
+        color: var(--neon-cyan);
+        margin-bottom: 0.5rem;
+    }
+    
+    .mst-edge {
+        animation: edgePulse 2s infinite;
+    }
+    
+    @keyframes edgePulse {
+        0%, 100% { opacity: 0.8; }
+        50% { opacity: 1; }
+    }
+`;
+document.head.appendChild(markerStyle);
+
+/**
+ * Update point position after dragging
+ */
+function updatePointPosition(pointId, newLatLng) {
+    // Update the restaurant data on the backend
+    fetch('/api/points/update', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            pointId: pointId,
+            lat: newLatLng.lat,
+            lng: newLatLng.lng
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert(`Đã cập nhật vị trí điểm ${pointId}`, 'success');
+        } else {
+            showAlert('Lỗi khi cập nhật vị trí', 'danger');
+            // Revert position
+            loadLocationData();
+        }
+    })
+    .catch(error => {
+        console.error('Error updating point position:', error);
+        showAlert('Lỗi khi cập nhật vị trí', 'danger');
+        loadLocationData();
+    });
+}
+
+// Add/remove point functions removed - not needed for simplified version

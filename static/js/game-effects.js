@@ -1,45 +1,27 @@
 /**
- * Game Effects and Animations for MST Algorithm Quest
- * Indie game-style visual effects and interactions
+ * Modern Visual Effects for MST Algorithm Lab
+ * Scientific and minimalist visual enhancements
  */
 
-class GameEffects {
+class ModernEffects {
     constructor() {
-        this.particles = [];
         this.isInitialized = false;
-        this.canvas = null;
-        this.ctx = null;
+        this.observers = [];
         this.init();
     }
 
     init() {
-        this.createParticleCanvas();
-        this.initMouseEffects();
-        this.initKeyboardEffects();
-        this.initTabEffects();
-        this.startParticleSystem();
+        this.initModernEffects();
+        this.initIntersectionObserver();
+        this.initButtonEffects();
+        this.initCardAnimations();
         this.isInitialized = true;
+        console.log('✨ Modern effects initialized');
     }
 
     createParticleCanvas() {
-        // Create a canvas for particle effects
-        this.canvas = document.createElement('canvas');
-        this.canvas.id = 'particle-canvas';
-        this.canvas.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            pointer-events: none;
-            z-index: 1;
-            opacity: 0.7;
-        `;
-        document.body.appendChild(this.canvas);
-        this.ctx = this.canvas.getContext('2d');
-        this.resizeCanvas();
-
-        window.addEventListener('resize', () => this.resizeCanvas());
+        // Disabled for student demo
+        return;
     }
 
     resizeCanvas() {
@@ -47,13 +29,9 @@ class GameEffects {
         this.canvas.height = window.innerHeight;
     }
 
-    // Particle system for background ambiance
+    // Particle system disabled for student demo
     startParticleSystem() {
-        // Create floating particles
-        for (let i = 0; i < 15; i++) {
-            this.createParticle();
-        }
-        this.animateParticles();
+        return;
     }
 
     createParticle() {
@@ -112,7 +90,56 @@ class GameEffects {
         requestAnimationFrame(() => this.animateParticles());
     }
 
-    // Mouse interaction effects
+    // Modern interaction effects
+    initModernEffects() {
+        // Smooth transitions for all interactive elements
+        document.body.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+        
+        // Add modern hover effects to buttons
+        this.initButtonHoverEffects();
+        
+        // Add card elevation effects
+        this.initCardHoverEffects();
+        
+        // Add focus management
+        this.initFocusEffects();
+    }
+    
+    initButtonHoverEffects() {
+        document.addEventListener('mouseover', (e) => {
+            if (e.target.closest('.modern-btn')) {
+                const btn = e.target.closest('.modern-btn');
+                btn.style.transform = 'translateY(-2px) scale(1.02)';
+            }
+        });
+        
+        document.addEventListener('mouseout', (e) => {
+            if (e.target.closest('.modern-btn')) {
+                const btn = e.target.closest('.modern-btn');
+                btn.style.transform = '';
+            }
+        });
+    }
+    
+    initCardHoverEffects() {
+        document.addEventListener('mouseover', (e) => {
+            if (e.target.closest('.modern-card')) {
+                const card = e.target.closest('.modern-card');
+                card.style.transform = 'translateY(-4px)';
+                card.style.boxShadow = 'var(--shadow-xl)';
+            }
+        });
+        
+        document.addEventListener('mouseout', (e) => {
+            if (e.target.closest('.modern-card')) {
+                const card = e.target.closest('.modern-card');
+                card.style.transform = '';
+                card.style.boxShadow = '';
+            }
+        });
+    }
+
+    // Mouse interaction effects - DISABLED
     initMouseEffects() {
         let mouseX = 0, mouseY = 0;
         let cursorTrail = [];
@@ -125,10 +152,7 @@ class GameEffects {
             cursorTrail.push({ x: mouseX, y: mouseY, time: Date.now() });
             if (cursorTrail.length > 20) cursorTrail.shift();
 
-            // Create particle on mouse move (occasionally)
-            if (Math.random() < 0.1) {
-                this.createMouseParticle(mouseX, mouseY);
-            }
+            // Particle creation disabled for performance
         });
 
         // Card hover effects
@@ -177,9 +201,9 @@ class GameEffects {
     }
 
     addCardGlowEffect(card) {
-        card.style.transition = 'all 0.3s ease';
-        card.style.boxShadow = '0 12px 40px rgba(0, 255, 255, 0.3), 0 0 20px rgba(0, 255, 255, 0.2)';
-        card.style.transform = 'translateY(-5px) scale(1.02)';
+        // Simplified for demo
+        card.style.transition = 'all 0.2s ease';
+        card.style.transform = 'translateY(-2px)';
     }
 
     removeCardGlowEffect(card) {
@@ -433,99 +457,268 @@ class GameEffects {
         shake();
     }
 
-    // Clean up
+    // Intersection Observer for fade-in animations
+    initIntersectionObserver() {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('fade-in');
+                }
+            });
+        }, {
+            threshold: 0.1,
+            rootMargin: '20px'
+        });
+        
+        // Observe cards and panels
+        document.querySelectorAll('.modern-card, .panel-section').forEach(el => {
+            observer.observe(el);
+        });
+        
+        this.observers.push(observer);
+    }
+    
+    // Modern button click effects
+    initButtonEffects() {
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.modern-btn, .control-btn')) {
+                this.createRippleEffect(e.target.closest('.modern-btn, .control-btn'), e);
+            }
+        });
+    }
+    
+    createRippleEffect(element, event) {
+        const ripple = document.createElement('span');
+        const rect = element.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height);
+        const x = event.clientX - rect.left - size / 2;
+        const y = event.clientY - rect.top - size / 2;
+        
+        ripple.style.cssText = `
+            position: absolute;
+            width: ${size}px;
+            height: ${size}px;
+            left: ${x}px;
+            top: ${y}px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: scale(0);
+            animation: rippleEffect 0.6s ease-out;
+            pointer-events: none;
+            z-index: 100;
+        `;
+        
+        element.style.position = 'relative';
+        element.style.overflow = 'hidden';
+        element.appendChild(ripple);
+        
+        setTimeout(() => ripple.remove(), 600);
+    }
+    
+    // Modern card animations
+    initCardAnimations() {
+        // Staggered animation for cards
+        const cards = document.querySelectorAll('.modern-card');
+        cards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            
+            setTimeout(() => {
+                card.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, index * 100);
+        });
+    }
+    
+    // Focus management for accessibility
+    initFocusEffects() {
+        // Enhanced focus indicators
+        document.addEventListener('focusin', (e) => {
+            if (e.target.matches('button, input, select, [tabindex]')) {
+                e.target.style.outline = '2px solid var(--accent-blue)';
+                e.target.style.outlineOffset = '2px';
+                e.target.style.boxShadow = '0 0 20px rgba(0, 212, 255, 0.3)';
+            }
+        });
+        
+        document.addEventListener('focusout', (e) => {
+            if (e.target.matches('button, input, select, [tabindex]')) {
+                e.target.style.outline = '';
+                e.target.style.outlineOffset = '';
+                e.target.style.boxShadow = '';
+            }
+        });
+    }
+    
+    // Algorithm visualization effects
+    highlightAlgorithmStep(element) {
+        if (!element) return;
+        
+        element.style.transition = 'all 0.3s ease-out';
+        element.style.transform = 'scale(1.02)';
+        element.style.background = 'linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(0, 255, 148, 0.1))';
+        element.style.borderColor = 'var(--accent-blue)';
+        
+        // Add pulse effect
+        element.style.animation = 'modernPulse 1s ease-in-out';
+        
+        setTimeout(() => {
+            element.style.transform = '';
+            element.style.animation = '';
+        }, 1000);
+    }
+    
+    // Graph edge animation
+    animateGraphEdge(edge) {
+        if (!edge) return;
+        
+        // Create flowing energy effect
+        edge.style.strokeDasharray = '10,5';
+        edge.style.strokeDashoffset = '15';
+        edge.style.animation = 'flowingEdge 1s linear infinite';
+        
+        setTimeout(() => {
+            edge.style.strokeDasharray = '';
+            edge.style.strokeDashoffset = '';
+            edge.style.animation = '';
+        }, 2000);
+    }
+    
+    // Success notification effect
+    showSuccessEffect() {
+        const effect = document.createElement('div');
+        effect.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, var(--accent-green) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            animation: successBurst 0.8s ease-out;
+        `;
+        
+        document.body.appendChild(effect);
+        setTimeout(() => effect.remove(), 800);
+    }
+    
+    // Cleanup
     destroy() {
-        if (this.canvas && this.canvas.parentNode) {
-            this.canvas.parentNode.removeChild(this.canvas);
-        }
-        this.particles = [];
+        this.observers.forEach(observer => observer.disconnect());
+        this.observers = [];
         this.isInitialized = false;
     }
 }
 
-// Add CSS animations
-const gameAnimationCSS = `
-@keyframes keyboardPop {
-    0% {
-        transform: scale(0) rotate(0deg);
+// Modern CSS animations
+const modernAnimationCSS = `
+@keyframes rippleEffect {
+    to {
+        transform: scale(4);
         opacity: 0;
     }
+}
+
+@keyframes modernPulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.7);
+    }
     50% {
-        transform: scale(1.2) rotate(10deg);
-        opacity: 1;
+        transform: scale(1.02);
+        box-shadow: 0 0 0 10px rgba(0, 212, 255, 0);
+    }
+}
+
+@keyframes flowingEdge {
+    0% {
+        stroke-dashoffset: 15;
     }
     100% {
-        transform: scale(0.8) rotate(0deg);
+        stroke-dashoffset: 0;
+    }
+}
+
+@keyframes successBurst {
+    0% {
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 1;
+    }
+    70% {
+        transform: translate(-50%, -50%) scale(1.2);
+        opacity: 0.8;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(2);
         opacity: 0;
     }
 }
 
-@keyframes nodePulse {
-    0%, 100% {
-        r: 20;
-        opacity: 0.8;
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
     }
-    50% {
-        r: 25;
+    to {
         opacity: 1;
+        transform: translateY(0);
     }
 }
 
-@keyframes stepHighlight {
-    0%, 100% {
-        background-color: rgba(0, 255, 255, 0.2);
-        transform: scale(1);
+.fade-in {
+    animation: fadeIn 0.6s ease-out;
+}
+
+/* Modern button effects */
+.modern-btn:active {
+    transform: translateY(-1px) scale(0.98) !important;
+}
+
+.control-btn:active {
+    transform: scale(0.95) !important;
+}
+
+/* Smooth transitions */
+* {
+    transition-property: transform, box-shadow, background-color, border-color;
+    transition-duration: 0.2s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Loading shimmer effect */
+.loading-shimmer {
+    background: linear-gradient(90deg, 
+        rgba(255, 255, 255, 0.1) 0%, 
+        rgba(255, 255, 255, 0.3) 50%, 
+        rgba(255, 255, 255, 0.1) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
     }
-    50% {
-        background-color: rgba(0, 255, 255, 0.4);
-        transform: scale(1.05);
+    100% {
+        background-position: 200% 0;
     }
-}
-
-.btn:active {
-    transform: translateY(-2px) scale(0.98) !important;
-}
-
-.card-header::after {
-    animation-duration: 4s !important;
-}
-
-/* Matrix-style text effect */
-.matrix-text {
-    font-family: 'Fira Code', monospace;
-    color: var(--neon-green);
-    text-shadow: 0 0 10px var(--neon-green);
-    animation: matrixFlicker 0.1s infinite alternate;
-}
-
-@keyframes matrixFlicker {
-    0% { opacity: 1; }
-    100% { opacity: 0.95; }
 }
 `;
 
-// Inject CSS
-const styleSheet = document.createElement('style');
-styleSheet.textContent = gameAnimationCSS;
-document.head.appendChild(styleSheet);
+// Inject modern CSS
+const modernStyleSheet = document.createElement('style');
+modernStyleSheet.textContent = modernAnimationCSS;
+document.head.appendChild(modernStyleSheet);
 
-// Initialize game effects when DOM is ready
+// Initialize modern effects when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    window.gameEffects = new GameEffects();
-    
-    // Enhance button clicks
-    document.addEventListener('click', (e) => {
-        if (e.target.classList.contains('btn')) {
-            window.gameEffects.enhanceButtonClick(e.target);
-        }
-    });
-    
-    // Auto-enhance graph elements when they're loaded
-    const observer = new MutationObserver(() => {
-        if (document.querySelector('.node')) {
-            window.gameEffects.enhanceGraphElements();
-            observer.disconnect();
-        }
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
+    window.modernEffects = new ModernEffects();
 });
+
+// Export for global use
+window.ModernEffects = ModernEffects;

@@ -1,269 +1,195 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <ul class="nav nav-tabs" id="mainTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="problem-tab" data-bs-toggle="tab" data-bs-target="#problem" 
-                        type="button" role="tab">
-                    <i class="fas fa-database me-2"></i>DATA SETUP
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="algorithm-tab" data-bs-toggle="tab" data-bs-target="#algorithm" 
-                        type="button" role="tab">
-                    <i class="fas fa-microchip me-2"></i>ALGORITHM
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="results-tab" data-bs-toggle="tab" data-bs-target="#results" 
-                        type="button" role="tab">
-                    <i class="fas fa-trophy me-2"></i>RESULTS
-                </button>
-            </li>
-        </ul>
-    </div>
-</div>
-
-<div class="tab-content mt-4" id="mainTabsContent">
-    <!-- Tab 1: Problem Definition -->
-    <div class="tab-pane fade show active" id="problem" role="tabpanel">
-        <div class="row">
-            <div class="col-lg-8">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-network-wired me-2"></i>NETWORK GRAPH
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="graph-visualization" class="border rounded" style="height: 400px;">
-                            <!-- Graph will be rendered here -->
-                        </div>
-                    </div>
+<div class="app-container">
+    <!-- Control Panel -->
+    <div class="control-panel">
+        <div class="panel-section">
+            <h3 class="section-title">
+                <i class="fas fa-cogs"></i>
+                Algorithm Configuration
+            </h3>
+            
+            <!-- Algorithm Selection -->
+            <div class="control-group">
+                <label class="control-label">Select Algorithm</label>
+                <div class="algorithm-selector">
+                    <input type="radio" id="kruskal" name="algorithm" value="kruskal" checked>
+                    <label for="kruskal" class="algorithm-option">
+                        <span class="algorithm-name">Kruskal's Algorithm</span>
+                        <span class="algorithm-desc">Edge-based approach</span>
+                    </label>
+                    
+                    <input type="radio" id="prim" name="algorithm" value="prim">
+                    <label for="prim" class="algorithm-option">
+                        <span class="algorithm-name">Prim's Algorithm</span>
+                        <span class="algorithm-desc">Vertex-based approach</span>
+                    </label>
                 </div>
             </div>
             
-            <div class="col-lg-4">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-info-circle me-2"></i>SYSTEM INFO
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        {% for id, restaurant in restaurants.items() %}
-                        <div class="restaurant-info mb-3">
-                            <div class="d-flex align-items-center mb-2">
-                                <span class="badge {% if restaurant.type == 'main' %}bg-danger{% else %}bg-primary{% endif %} me-2">
-                                    {{ id }}
-                                </span>
-                                <strong>{{ restaurant.name }}</strong>
-                            </div>
-                            <small class="text-muted d-block">{{ restaurant.location }}</small>
-                            <small class="text-secondary">{{ restaurant.description }}</small>
-                        </div>
-                        {% endfor %}
+            <!-- Action Buttons -->
+            <div class="control-group">
+                <button class="modern-btn primary calculate-btn" id="calculate-mst">
+                    <i class="fas fa-play"></i>
+                    <span>Execute MST Analysis</span>
+                </button>
+                
+                <button class="modern-btn secondary reset-btn" id="resetBtn">
+                    <i class="fas fa-refresh"></i>
+                    <span>Reset System</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Animation Controls -->
+        <div class="panel-section" id="animation-section" style="display: none;">
+            <h3 class="section-title">
+                <i class="fas fa-film"></i>
+                Animation Controls
+            </h3>
+            
+            <div class="animation-controls">
+                <button class="control-btn step-back-btn" id="step-backward">
+                    <i class="fas fa-step-backward"></i>
+                </button>
+                
+                <button class="control-btn play-btn" id="play-pause">
+                    <i class="fas fa-play" id="play-icon"></i>
+                </button>
+                
+                <button class="control-btn step-forward-btn" id="step-forward">
+                    <i class="fas fa-step-forward"></i>
+                </button>
+            </div>
+            
+            <div class="speed-controls">
+                <button class="speed-btn" id="speed-slow">0.5x</button>
+                <button class="speed-btn active" id="speed-normal">1x</button>
+                <button class="speed-btn" id="speed-fast">2x</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content Area -->
+    <div class="content-area">
+        <!-- Interactive Map -->
+        <div class="modern-card map-container">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-map"></i>
+                    Interactive Graph Visualization
+                </h3>
+                <div class="card-actions">
+                    <span class="map-info">Drag nodes to reposition</span>
+                </div>
+            </div>
+            <div class="card-content">
+                <div id="hanoi-map" class="map-canvas"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Status & Results Panel -->
+    <div class="status-panel">
+        <!-- Current Status -->
+        <div class="modern-card status-card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-info-circle"></i>
+                    System Status
+                </h3>
+            </div>
+            <div class="card-content">
+                <div class="status-info">
+                    <p class="info-text">
+                        The MST algorithm will analyze all nodes in the graph. 
+                        Edge weights are calculated using real geographic coordinates.
+                    </p>
+                </div>
+                
+                <!-- Current Step Display -->
+                <div id="current-step-display" class="step-display" style="display: none;">
+                    <div class="step-indicator" id="current-step-info">
+                        <!-- Current step info will be displayed here -->
                     </div>
                 </div>
-
-                <div class="card mt-3">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-sliders-h me-2"></i>COST MATRIX
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="cost-matrix">
-                            <!-- Cost matrix will be rendered here -->
-                        </div>
-                        <button class="btn btn-success btn-sm mt-3" onclick="updateCosts()">
-                            <i class="fas fa-upload me-1"></i>UPDATE
-                        </button>
-                        <button class="btn btn-outline-secondary btn-sm mt-3" onclick="resetData()">
-                            <i class="fas fa-refresh me-1"></i>RESET
-                        </button>
+                
+                <!-- Console Log -->
+                <div id="console-section" class="console-container" style="display: none;">
+                    <h4 class="console-title">
+                        <i class="fas fa-terminal"></i>
+                        Execution Log
+                    </h4>
+                    <div id="console-log" class="console-output">
+                        <!-- Console output here -->
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Tab 2: Algorithm Execution -->
-    <div class="tab-pane fade" id="algorithm" role="tabpanel">
-        <div class="row">
-            <div class="col-lg-8">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-desktop me-2"></i>VISUALIZATION ENGINE
-                        </h5>
-                        <div class="btn-group animation-controls" role="group">
-                            <button type="button" class="btn btn-primary" id="prev-btn" onclick="stepBackward()">
-                                <i class="fas fa-step-backward"></i>
-                            </button>
-                            <button type="button" class="btn btn-success" id="play-pause-btn" onclick="playPause()">
-                                <i class="fas fa-play" id="play-icon"></i>
-                            </button>
-                            <button type="button" class="btn btn-primary" id="next-btn" onclick="stepForward()">
-                                <i class="fas fa-step-forward"></i>
-                            </button>
-                            <button type="button" class="btn btn-danger" id="reset-btn" onclick="resetAnimation()">
-                                <i class="fas fa-stop"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <label class="form-label cyber-text">ALGORITHM:</label>
-                                    <select class="form-select" id="algorithm-select">
-                                        <option value="kruskal">🤖 KRUSKAL</option>
-                                        <option value="prim">⚡ PRIM</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label cyber-text">SPEED:</label>
-                                    <select class="form-select" id="speed-select">
-                                        <option value="2000">🐌 SLOW (2s)</option>
-                                        <option value="1000" selected>🚶 NORMAL (1s)</option>
-                                        <option value="500">🚀 FAST (0.5s)</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <button class="btn btn-primary mt-3" onclick="runAlgorithm()">
-                                <i class="fas fa-rocket me-1"></i>EXECUTE ALGORITHM
-                            </button>
-                        </div>
-                        
-                        <div id="algorithm-visualization" class="border rounded" style="height: 400px;">
-                            <!-- Algorithm visualization will be rendered here -->
-                        </div>
-                        
-                        <div class="mt-3">
-                            <div class="progress">
-                                <div class="progress-bar" id="progress-bar" role="progressbar" style="width: 0%"></div>
-                            </div>
-                            <small class="text-muted mt-1 d-block" id="step-info">SYSTEM READY</small>
-                        </div>
-                    </div>
-                </div>
+        
+        <!-- Results Panel -->
+        <div class="modern-card results-card" id="results-panel" style="display: none;">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-chart-line"></i>
+                    Analysis Results
+                </h3>
             </div>
-            
-            <div class="col-lg-4">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-file-code me-2"></i>SOURCE CODE
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="pseudocode" class="font-monospace small">
-                            <!-- Pseudocode will be displayed here -->
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card mt-3">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-terminal me-2"></i>DEBUG CONSOLE
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="console-log" class="font-monospace small" style="height: 200px; overflow-y: auto;">
-                            <!-- Console logs will be displayed here -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tab 3: Results -->
-    <div class="tab-pane fade" id="results" role="tabpanel">
-        <div class="row">
-            <div class="col-lg-8">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-project-diagram me-2"></i>MST OUTPUT
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="mst-result" class="border rounded" style="height: 400px;">
-                            <!-- MST result will be rendered here -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-lg-4">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-chart-bar me-2"></i>STATISTICS
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="result-summary">
-                            <!-- Result summary will be displayed here -->
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card mt-3">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-balance-scale me-2"></i>BENCHMARK
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <button class="btn btn-info btn-sm" onclick="compareAlgorithms()">
-                            <i class="fas fa-balance-scale me-1"></i>COMPARE
-                        </button>
-                        <div id="comparison-result" class="mt-3">
-                            <!-- Comparison results will be displayed here -->
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card mt-3">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-chart-pie me-2"></i>ANALYSIS
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="benefit-analysis">
-                            <!-- Benefit analysis will be displayed here -->
-                        </div>
-                    </div>
+            <div class="card-content">
+                <div id="mst-result" class="results-content">
+                    <!-- Results will be displayed here -->
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Loading Modal -->
-<div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-sm">
-        <div class="modal-content">
-            <div class="modal-body text-center">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <p class="mt-2 mb-0 pixel-text">PROCESSING...</p>
-            </div>
-        </div>
-    </div>
+<!-- Progress Indicator -->
+<div class="progress-indicator" id="progress-indicator" style="display: none;">
+    <div class="progress-bar" id="progress-bar"></div>
+    <div class="progress-text" id="progress-text">Analyzing...</div>
 </div>
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/main.js') }}"></script>
-<script src="{{ url_for('static', filename='js/graph.js') }}"></script>
-<script src="{{ url_for('static', filename='js/animation.js') }}"></script>
+<script>
+    // Update header stats when data is loaded
+    function updateHeaderStats(nodes, edges, totalCost) {
+        const nodeCount = document.getElementById('node-count');
+        const edgeCount = document.getElementById('edge-count');
+        const totalCostEl = document.getElementById('total-cost');
+        
+        if (nodeCount) nodeCount.textContent = nodes || '8';
+        if (edgeCount) edgeCount.textContent = edges || '28';
+        if (totalCostEl) totalCostEl.textContent = totalCost ? totalCost.toFixed(1) : '0.0';
+    }
+    
+    // Show animation section when MST is calculated
+    function showAnimationSection() {
+        const animationSection = document.getElementById('animation-section');
+        if (animationSection) {
+            animationSection.style.display = 'block';
+        }
+    }
+    
+    // Show progress indicator
+    function showProgress(text = 'Processing...') {
+        const indicator = document.getElementById('progress-indicator');
+        const progressText = document.getElementById('progress-text');
+        if (indicator) indicator.style.display = 'block';
+        if (progressText) progressText.textContent = text;
+    }
+    
+    function hideProgress() {
+        const indicator = document.getElementById('progress-indicator');
+        if (indicator) indicator.style.display = 'none';
+    }
+    
+    // Expose functions globally for use by other scripts
+    window.updateHeaderStats = updateHeaderStats;
+    window.showAnimationSection = showAnimationSection;
+    window.showProgress = showProgress;
+    window.hideProgress = hideProgress;
+</script>
 {% endblock %}

@@ -3,7 +3,7 @@ class AnimationController {
         this.isPlaying = false;
         this.currentStep = 0;
         this.totalSteps = 0;
-        this.animationSpeed = 1000;
+        this.animationSpeed = 2000; // Slower speed for demo
         this.interval = null;
         this.result = null;
     }
@@ -26,7 +26,7 @@ class AnimationController {
             } else {
                 this.pause();
             }
-        }, this.animationSpeed);
+        }, this.animationSpeed); // Slower for better comprehension
     }
     
     pause() {
@@ -65,7 +65,8 @@ class AnimationController {
     }
     
     setSpeed(speed) {
-        this.animationSpeed = speed;
+        // Limit minimum speed for demo clarity
+        this.animationSpeed = Math.max(speed, 1500);
         if (this.isPlaying) {
             this.pause();
             this.play();
@@ -80,24 +81,17 @@ class AnimationController {
     }
     
     renderStep(step) {
-        if (algorithmRenderer && currentData) {
-            let highlightedEdges = [];
-            let rejectedEdges = [];
-            
-            if (step.step_type === 'accept' && step.edge) {
-                highlightedEdges = this.getAcceptedEdgesUpToStep(this.currentStep);
-            } else if (step.step_type === 'reject' && step.edge) {
-                rejectedEdges = [step.edge];
-                highlightedEdges = this.getAcceptedEdgesUpToStep(this.currentStep);
-            } else {
-                highlightedEdges = this.getAcceptedEdgesUpToStep(this.currentStep);
-            }
-            
-            algorithmRenderer.render(currentData, highlightedEdges, rejectedEdges);
-        }
-        
+        // Update console log and components visualization
         this.updateConsoleLog(step);
         this.updateComponentsVisualization(step);
+        
+        // Update map visualization if available
+        if (typeof drawMSTOnMap === 'function' && step.step_type === 'accept') {
+            const acceptedEdges = this.getAcceptedEdgesUpToStep(this.currentStep);
+            if (acceptedEdges.length > 0) {
+                drawMSTOnMap(acceptedEdges);
+            }
+        }
     }
     
     getAcceptedEdgesUpToStep(stepIndex) {
@@ -123,16 +117,108 @@ class AnimationController {
     }
     
     updateStepInfo() {
-        const stepInfo = document.getElementById('step-info');
-        if (stepInfo) {
+        const currentStepInfo = document.getElementById('current-step-info');
+        
+        if (currentStepInfo) {
             if (this.totalSteps === 0) {
-                stepInfo.textContent = 'Chưa có dữ liệu';
+                currentStepInfo.innerHTML = '<span class="text-muted">Chưa có dữ liệu</span>';
             } else {
-                stepInfo.textContent = `Bước ${this.currentStep + 1}/${this.totalSteps}`;
+                const step = this.result.steps[this.currentStep];
+                const statusBadge = step.step_type === 'accept' ? 
+                    '<span class="status-badge accept">ACCEPTED</span>' : 
+                    '<span class="status-badge reject">REJECTED</span>';
                 
-                if (this.result && this.result.steps[this.currentStep]) {
-                    const step = this.result.steps[this.currentStep];
-                    stepInfo.textContent += ` - ${step.explanation}`;
+                // Add CSS for status badges
+                if (!document.getElementById('status-badge-styles')) {
+                    const badgeStyles = document.createElement('style');
+                    badgeStyles.id = 'status-badge-styles';
+                    badgeStyles.textContent = `
+                        .status-badge {
+                            padding: 0.25rem 0.5rem;
+                            border-radius: var(--radius-sm);
+                            font-size: 0.75rem;
+                            font-weight: 600;
+                            text-transform: uppercase;
+                            letter-spacing: 0.05em;
+                        }
+                        .status-badge.accept {
+                            background: var(--accent-green);
+                            color: var(--primary-bg);
+                        }
+                        .status-badge.reject {
+                            background: var(--error);
+                            color: var(--text-primary);
+                        }
+                    `;
+                    document.head.appendChild(badgeStyles);
+                }
+                
+                currentStepInfo.innerHTML = `
+                    <div class="step-header">
+                        <div class="step-number">
+                            Step ${this.currentStep + 1}/${this.totalSteps}
+                        </div>
+                        <div class="step-status">
+                            ${statusBadge}
+                            ${this.isPlaying ? '<span class="status-playing"><i class="fas fa-play"></i> PLAYING</span>' : ''}
+                        </div>
+                    </div>
+                    <div class="step-description">${step.explanation}</div>
+                    ${step.edge ? `<div class="step-edge">Edge: ${step.edge.u}-${step.edge.v} (${step.edge.weight} km)</div>` : ''}
+                    ${step.total_cost ? `<div class="step-cost">Total Cost: ${step.total_cost.toFixed(1)} km</div>` : ''}
+                `;
+                
+                // Add CSS for modern step display
+                if (!document.getElementById('step-display-styles')) {
+                    const stepStyles = document.createElement('style');
+                    stepStyles.id = 'step-display-styles';
+                    stepStyles.textContent = `
+                        .step-header {
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            margin-bottom: 0.75rem;
+                        }
+                        .step-number {
+                            font-family: var(--font-mono);
+                            font-weight: 600;
+                            color: var(--accent-blue);
+                        }
+                        .step-status {
+                            display: flex;
+                            gap: 0.5rem;
+                            align-items: center;
+                        }
+                        .status-playing {
+                            background: var(--accent-blue);
+                            color: var(--primary-bg);
+                            padding: 0.25rem 0.5rem;
+                            border-radius: var(--radius-sm);
+                            font-size: 0.75rem;
+                            font-weight: 600;
+                            display: flex;
+                            align-items: center;
+                            gap: 0.25rem;
+                        }
+                        .step-description {
+                            color: var(--text-primary);
+                            margin-bottom: 0.5rem;
+                            line-height: 1.5;
+                        }
+                        .step-edge {
+                            color: var(--accent-blue);
+                            font-size: 0.875rem;
+                            font-family: var(--font-mono);
+                            margin-bottom: 0.25rem;
+                        }
+                        .step-cost {
+                            color: var(--accent-green);
+                            font-size: 0.875rem;
+                            font-weight: 600;
+                            font-family: var(--font-mono);
+                        }
+                    `;
+                    document.head.appendChild(stepStyles);
                 }
             }
         }
@@ -144,6 +230,8 @@ class AnimationController {
             playIcon.className = this.isPlaying ? 'fas fa-pause' : 'fas fa-play';
         }
     }
+    
+    // Removed updateCurrentStepCard as it's now integrated into updateStepInfo
     
     updateConsoleLog(step) {
         const consoleLog = document.getElementById('console-log');
@@ -230,7 +318,9 @@ const animationController = new AnimationController();
 
 function playPause() {
     if (!currentResult) {
-        showAlert('Chưa có kết quả thuật toán. Vui lòng chạy thuật toán trước!', 'warning');
+        if (typeof showAlert === 'function') {
+            showAlert('Chưa có kết quả thuật toán. Vui lòng chạy thuật toán trước!', 'warning');
+        }
         return;
     }
     
@@ -261,27 +351,13 @@ function resetAnimation() {
     animationController.reset();
 }
 
-document.getElementById('speed-select')?.addEventListener('change', function() {
-    const speed = parseInt(this.value);
-    animationController.setSpeed(speed);
-});
+// Speed controls are now handled in main.js with buttons
 
+// Window resize handler for map
 window.addEventListener('resize', function() {
-    if (graphRenderer) {
+    if (hanoiMap) {
         setTimeout(() => {
-            if (currentData) renderGraph(currentData);
-        }, 100);
-    }
-    
-    if (algorithmRenderer) {
-        setTimeout(() => {
-            if (currentData) renderAlgorithmVisualization();
-        }, 100);
-    }
-    
-    if (mstRenderer) {
-        setTimeout(() => {
-            if (currentData && currentResult) renderMSTResult();
+            hanoiMap.invalidateSize();
         }, 100);
     }
 });

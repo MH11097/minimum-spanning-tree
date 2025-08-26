@@ -1,282 +1,150 @@
-# Demo MST - Mạng lưới Nhà hàng Phố Cổ
+# 🔬 Phòng Thí Nghiệm Thuật Toán MST
 
-## Mô tả Tổng quan
+> **Nền Tảng Phân Tích Cây Khung Tối Thiểu**  
+> Ứng dụng web hiện đại để học và trực quan hóa thuật toán Minimum Spanning Tree
 
-Ứng dụng web Flask demo minh họa thuật toán Minimum Spanning Tree (MST) cho bài toán tối ưu hóa mạng lưới nhà hàng. Ứng dụng phục vụ mục đích giáo dục, giúp sinh viên hiểu rõ thuật toán Kruskal và Prim thông qua visualization trực quan.
-
-## Cài đặt và Chạy ứng dụng
-
-### Yêu cầu hệ thống
-- Python 3.8+
-- pip (Python package manager)
-- Trình duyệt web hiện đại (Chrome, Firefox, Safari, Edge)
-
-### Hướng dẫn cài đặt
-
-1. **Clone hoặc tải project về máy**
-```bash
-# Nếu có git
-git clone <repository-url>
-cd minimum-spanning-tree
-
-# Hoặc tải ZIP và giải nén
-```
-
-2. **Tạo virtual environment (khuyến nghị)**
-```bash
-# Windows
-python -m venv venv
-venv\Scripts\activate
-
-# macOS/Linux
-python3 -m venv venv
-source venv/bin/activate
-```
-
-3. **Cài đặt dependencies**
-```bash
-pip install -r requirements.txt
-```
-
-4. **Chạy ứng dụng**
-```bash
-python app.py
-```
-
-5. **Truy cập ứng dụng**
-Mở trình duyệt và truy cập: `http://localhost:5000`
-
-## Cấu trúc Project
-
-```
-minimum-spanning-tree/
-├── app.py              # Main Flask application
-├── algorithms/
-│   ├── __init__.py
-│   ├── mst.py         # MST algorithms (Kruskal & Prim)
-│   └── union_find.py  # Union-Find data structure
-├── data/
-│   └── restaurants.py # Restaurant data and cost matrix
-├── static/
-│   ├── css/
-│   │   └── style.css  # Custom styles
-│   └── js/
-│       ├── main.js    # Main frontend logic
-│       ├── graph.js   # D3.js graph visualization
-│       └── animation.js # Step-by-step animation
-├── templates/
-│   ├── base.html      # Base template
-│   └── index.html     # Main page
-├── requirements.txt   # Python dependencies
-└── README.md         # This file
-```
-
-## Hướng dẫn Sử dụng Giao diện
-
-### Giao diện chính
-Ứng dụng bao gồm 3 tab chính:
-
-#### **1. Tab "Bài toán" - Thiết lập dữ liệu**
-- **Biểu đồ mạng lưới**: Hiển thị 6 cửa hàng (A-F) dưới dạng nodes và các kết nối (edges)
-  - Click vào các node để xem thông tin chi tiết
-  - Hover để xem tên cửa hàng đầy đủ
-- **Ma trận chi phí**: Bảng 6x6 cho phép chỉnh sửa chi phí vận chuyển
-  - Click vào ô để chỉnh sửa giá trị
-  - Nhấn Enter để confirm thay đổi
-  - Biểu đồ sẽ tự động cập nhật khi thay đổi chi phí
-- **Buttons điều khiển**:
-  - `Reset Data`: Khôi phục về dữ liệu mặc định
-  - `Validate`: Kiểm tra tính hợp lệ của dữ liệu
-
-*[Chèn ảnh: Screenshot tab Bài toán với ma trận chi phí và biểu đồ mạng lưới]*
-
-#### **2. Tab "Thuật toán" - Chạy và Xem Animation**
-- **Chọn thuật toán**:
-  - Radio buttons: Kruskal hoặc Prim
-  - Hiển thị độ phức tạp thời gian của mỗi thuật toán
-- **Controls Animation**:
-  - `▶️ Play`: Chạy animation tự động
-  - `⏸️ Pause`: Tạm dừng animation
-  - `⏮️ Previous`: Quay lại bước trước
-  - `⏭️ Next`: Chuyển bước tiếp theo
-  - `Speed slider`: Điều chỉnh tốc độ animation (0.5x - 3x)
-- **Visualization Panel**:
-  - Biểu đồ hiển thị quá trình chọn edges
-  - Edges được thêm vào MST sẽ đổi màu (xanh lá)
-  - Edges bị loại bỏ sẽ đổi màu (đỏ)
-  - Current step được highlight
-- **Pseudocode Panel**:
-  - Code thuật toán với dòng hiện tại được highlight
-  - Giải thích bước hiện tại bằng tiếng Việt
-- **Step Information**:
-  - Thông tin chi tiết về edge đang xét
-  - Trạng thái Union-Find (cho Kruskal)
-  - Priority queue (cho Prim)
-  - Chi phí tích lũy
-
-*[Chèn ảnh: Screenshot tab Thuật toán đang chạy animation Kruskal]*
-*[Chèn ảnh: Pseudocode panel với highlighting]*
-
-#### **3. Tab "Kết quả" - Phân tích MST**
-- **MST Visualization**: Biểu đồ chỉ hiển thị các edge trong MST
-  - Layout tối ưu để dễ nhìn
-  - Thickness của edge tỷ lệ với chi phí
-- **Thông tin tổng hợp**:
-  - Tổng chi phí MST
-  - Danh sách edges trong MST (từ, đến, chi phí)
-  - Số edges được xét và loại bỏ
-- **So sánh thuật toán**:
-  - Bảng so sánh Kruskal vs Prim
-  - Thời gian thực thi
-  - Số bước thực hiện
-- **Export options**:
-  - `Export PNG`: Tải về hình ảnh MST
-  - `Export JSON`: Tải về dữ liệu MST
-  - `Export Steps`: Tải về chi tiết từng bước
-
-*[Chèn ảnh: Screenshot tab Kết quả với MST final và bảng so sánh]*
-
-### Keyboard Shortcuts
-- `Space`: Play/Pause animation
-- `←`: Previous step
-- `→`: Next step
-- `R`: Reset to beginning
-- `1,2,3`: Chuyển giữa các tabs
-- `+/-`: Tăng/giảm tốc độ animation
-
-### Mobile/Responsive
-- Giao diện tự động điều chỉnh cho màn hình nhỏ
-- Touch gestures hỗ trợ trên tablet/mobile
-- Tabs chuyển thành dropdown menu trên mobile
-
-*[Chèn ảnh: Screenshot giao diện mobile]*
-
-### Tips Sử dụng
-1. **Bắt đầu**: Luôn xem tab "Bài toán" trước để hiểu dữ liệu
-2. **Thử nghiệm**: Thay đổi một số chi phí để thấy MST khác nhau
-3. **Học thuật toán**: Chạy từng bước một để hiểu logic
-4. **So sánh**: Chạy cả Kruskal và Prim với cùng dữ liệu
-5. **Export**: Lưu kết quả để presentation hoặc báo cáo
-
-## Tính năng chính
-
-### 1. Visualization trực quan
-- **Tab Bài toán**: Hiển thị mạng lưới 6 cửa hàng với ma trận chi phí có thể chỉnh sửa
-- **Tab Thuật toán**: Chạy step-by-step animation cho Kruskal hoặc Prim với pseudocode
-- **Tab Kết quả**: Hiển thị MST cuối cùng với phân tích chi phí
-
-### 2. Thuật toán được hỗ trợ
-- **Kruskal**: Sử dụng Union-Find với path compression
-- **Prim**: Sử dụng priority queue (min-heap)
-- So sánh kết quả giữa hai thuật toán
-
-### 3. Tương tác người dùng
-- Chỉnh sửa chi phí vận chuyển real-time
-- Controls animation: play/pause, step forward/backward, speed control
-- Export kết quả và visualization
-
-## API Endpoints
-
-- `GET /` - Trang chủ
-- `POST /api/solve` - Chạy thuật toán MST (Kruskal/Prim)
-- `GET /api/step/<step_id>` - Lấy thông tin bước cụ thể
-- `POST /api/update_costs` - Cập nhật ma trận chi phí
-- `GET /api/reset` - Reset về dữ liệu mặc định
-- `GET /api/data` - Lấy dữ liệu nhà hàng và chi phí
-- `GET /api/compare` - So sánh kết quả Kruskal vs Prim
-
-## Dữ liệu Demo
-
-### Mạng lưới nhà hàng
-- **A (Phở Cổ - Chính)**: Cửa hàng trung tâm phân phối
-- **B (Times City)**: Chi nhánh trong TTTM
-- **C (Lotte Center)**: Chi nhánh cao cấp  
-- **D (Aeon Long Biên)**: Chi nhánh ngoại thành
-- **E (Royal City)**: Chi nhánh khu đô thị mới
-- **F (BigC Thăng Long)**: Chi nhánh trong siêu thị
-
-### Ma trận chi phí mặc định (triệu VND/tháng)
-```
-    A    B    C    D    E    F
-A   -   3.2  2.8  4.5  3.6  4.1
-B  3.2   -   2.1  1.9  1.5  3.8
-C  2.8  2.1   -   3.4  2.6  1.8
-D  4.5  1.9  3.4   -   2.9  2.3
-E  3.6  1.5  2.6  2.9   -   2.7
-F  4.1  3.8  1.8  2.3  2.7   -
-```
-
-## Tech Stack
-
-### Backend
-- **Flask 2.3.3**: Web framework
-- **Python 3.8+**: Programming language
-- **Jinja2**: Template engine
-
-### Frontend  
-- **Bootstrap 5**: CSS framework
-- **D3.js v7**: Data visualization
-- **JavaScript ES6+**: Interactive features
-- **HTML5 & CSS3**: Markup and styling
-
-## Troubleshooting
-
-### Lỗi thường gặp
-
-1. **ModuleNotFoundError**: Đảm bảo đã cài đặt requirements.txt
-```bash
-pip install -r requirements.txt
-```
-
-2. **Port 5000 đã được sử dụng**: Thay đổi port trong app.py
-```python
-app.run(debug=True, host='0.0.0.0', port=5001)
-```
-
-3. **Lỗi hiển thị graph**: Kiểm tra kết nối internet (cần tải D3.js, Bootstrap từ CDN)
-
-### Performance
-- Response time < 100ms cho API calls
-- Hỗ trợ animation 60fps
-- Tương thích với 10+ concurrent users
-
-## Mở rộng
-
-### Tính năng có thể thêm
-- Import/export custom graph data (CSV, JSON)
-- Dark mode toggle
-- Multiple language support (English/Vietnamese)
-- Real-time collaboration với WebSocket
-- Integration với Google Maps cho vị trí thực tế
-- Export animation thành GIF
-- Unit tests cho algorithms
-- Database persistence cho custom data
-
-### Educational enhancements
-- Interactive quiz về MST concepts
-- Tooltips giải thích thuật ngữ kỹ thuật
-- Step-by-step explanation panels
-- Comparison với các thuật toán khác (Borůvka)
-- Complexity analysis visualization
-
-## Đóng góp
-
-Để đóng góp vào project:
-
-1. Fork repository
-2. Tạo feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature`)
-5. Mở Pull Request
-
-## License
-
-Distributed under the MIT License. See `LICENSE` for more information.
-
-## Contact
-
-Project Link: [https://github.com/yourusername/minimum-spanning-tree](https://github.com/yourusername/minimum-spanning-tree)
+![MST Algorithm Lab](https://img.shields.io/badge/Thuật%20Toán-MST-blue?style=for-the-badge) ![Python](https://img.shields.io/badge/Python-3.8+-green?style=for-the-badge) ![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-yellow?style=for-the-badge)
 
 ---
 
-**Lưu ý**: Ứng dụng này được thiết kế cho mục đích giáo dục. Dữ liệu và chi phí chỉ mang tính chất minh họa.
+## 🎮 Hướng Dẫn Sử Dụng Nhanh
+
+### 🚀 Bắt Đầu Trong 3 Bước
+
+#### **Bước 1: Mở Ứng Dụng**
+Truy cập ứng dụng qua trình duyệt web. Giao diện sẽ hiển thị bản đồ Hà Nội với các điểm nhà hàng.
+
+> 📷 **[CHÈN ẢNH: Giao diện chính khi mở ứng dụng]**  
+> 📝 **Ghi chú:** *Bạn có thể thêm ảnh chụp màn hình giao diện chính ở đây*
+
+#### **Bước 2: Chọn Thuật Toán**
+Trong panel bên trái, chọn một trong hai thuật toán:
+- 🔵 **Kruskal** - Phù hợp với đồ thị thưa
+- 🟢 **Prim** - Phù hợp với đồ thị dày đặc
+
+> 📷 **[CHÈN ẢNH: Panel chọn thuật toán]**  
+> 📝 **Ghi chú:** *Chụp màn hình phần Algorithm Selection để minh họa*
+
+#### **Bước 3: Chạy Phân Tích** 
+Nhấn nút **"Execute MST Analysis"** để bắt đầu. Kết quả sẽ hiển thị:
+- 📊 Thống kê realtime (header)
+- 🗺️ Cây MST trên bản đồ
+- 📋 Chi tiết kết quả (panel phải)
+
+> 📷 **[CHÈN ẢNH: Kết quả MST sau khi chạy thuật toán]**  
+> 📝 **Ghi chú:** *Ảnh showing MST được highlight trên bản đồ với kết quả*
+
+---
+
+### ⚡ **Tính Năng Nâng Cao**
+
+#### 🎬 **Animation Từng Bước**
+Sau khi chạy thuật toán, sử dụng các nút điều khiển để xem từng bước:
+
+| Nút | Chức năng | Phím tắt |
+|-----|-----------|----------|
+| ▶️ | Phát/Tạm dừng | `Space` |
+| ⏮️ | Bước trước | `←` |
+| ⏭️ | Bước tiếp | `→` |
+| ⚡ | Tốc độ (0.5x-2x) | - |
+
+> 📷 **[CHÈN ẢNH: Animation controls và step-by-step visualization]**  
+> 📝 **Ghi chú:** *Chụp màn hình panel animation controls và current step display*
+
+#### 🖱️ **Tương Tác Với Bản Đồ**
+- **Kéo thả nút**: Di chuyển các điểm để thay đổi đồ thị
+- **Tự động tính lại**: Khoảng cách cập nhật theo tọa độ mới
+- **Zoom & Pan**: Phóng to/thu nhỏ và di chuyển bản đồ
+
+> 📷 **[CHÈN ẢNH: Ví dụ kéo thả một nút trên bản đồ]**  
+> 📝 **Ghi chú:** *Screenshot showing before/after khi drag một node*
+
+#### 📊 **Đọc Kết Quả**
+Panel kết quả hiển thị:
+- 💰 **Total Cost**: Tổng trọng số MST
+- 🔗 **Edge List**: Danh sách các cạnh được chọn  
+- 📈 **Step Count**: Số bước thực hiện
+- 📝 **Execution Log**: Chi tiết từng bước với giải thích
+
+> 📷 **[CHÈN ẢNH: Results panel với đầy đủ thông tin]**  
+> 📝 **Ghi chú:** *Chụp results panel showing complete analysis*
+
+---
+
+### 💡 **Mẹo Sử Dụng Hiệu Quả**
+
+#### ✨ **Thực Hành Tốt**
+- 🎯 **So sánh thuật toán**: Chạy cả Kruskal và Prim trên cùng dữ liệu
+- 🔄 **Thử nghiệm**: Di chuyển các nút để tạo đồ thị khác nhau
+- 📚 **Học tập**: Xem animation chậm (0.5x) để hiểu rõ từng bước
+- 📱 **Mobile**: App responsive, có thể dùng trên tablet/phone
+
+> 📝 **Ghi chú người dùng:**  
+> *Bạn có thể thêm những kinh nghiệm sử dụng của mình ở đây*
+
+#### 🚨 **Xử Lý Sự Cố Nhanh**
+- **Bản đồ không tải**: Kiểm tra internet, refresh trang
+- **Animation lag**: Giảm tốc độ, đóng tab khác
+- **Nút không kéo được**: Đảm bảo page đã load xong
+
+> 📷 **[CHÈN ẢNH: Ví dụ error message hoặc loading state]**  
+> 📝 **Ghi chú:** *Screenshot của các trạng thái lỗi phổ biến*
+
+---
+
+### 🎓 **Dành Cho Giáo Viên & Sinh Viên**
+
+#### 👨‍🏫 **Sử Dụng Trong Lớp Học**
+- **Demo trực tiếp**: Chiếu màn hình để giảng thuật toán MST
+- **Bài tập tương tác**: Học sinh thực hành trên máy cá nhân
+- **So sánh thuật toán**: Phân tích ưu/nhược điểm Kruskal vs Prim
+- **Ứng dụng thực tế**: Kết nối với bài toán quy hoạch mạng
+
+> 📝 **Ghi chú giáo viên:**  
+> *Có thể thêm kế hoạch bài giảng hoặc worksheet ở đây*
+
+> 📷 **[CHÈN ẢNH: Lớp học sử dụng ứng dụng]**  
+> 📝 **Ghi chú:** *Hình ảnh lớp học IT sử dụng app để học thuật toán*
+
+#### 🎯 **Mục Tiêu Học Tập**
+✅ Hiểu nguyên lý hoạt động của MST  
+✅ Phân biệt được Kruskal và Prim  
+✅ Tính toán độ phức tạp thuật toán  
+✅ Ứng dụng vào bài toán thực tế  
+
+> 📝 **Bài tập mẫu:**  
+> *1. Chạy Kruskal trên đồ thị mẫu và ghi lại các bước*  
+> *2. So sánh kết quả với Prim algorithm*  
+> *3. Di chuyển 2-3 nút và quan sát sự thay đổi MST*
+
+---
+
+## 🛠️ **Thông Tin Kỹ Thuật**
+
+### **Công Nghệ Sử Dụng**
+- **Frontend**: JavaScript ES6+, HTML5, CSS3, Leaflet.js
+- **Backend**: Python 3.8+, Flask
+- **Algorithms**: Kruskal (Union-Find), Prim (Priority Queue)
+- **Map**: OpenStreetMap với tọa độ thực Hà Nội
+
+### **Tương Thích**
+- ✅ Chrome 90+ | Firefox 88+ | Safari 14+ | Edge 90+
+- ✅ Desktop, Tablet, Mobile responsive
+- ✅ Keyboard navigation support
+
+---
+
+## 📞 **Hỗ Trợ & Liên Hệ**
+
+- 🐛 **Báo lỗi**: Tạo issue trên GitHub repo
+- 💡 **Đề xuất tính năng**: Pull request hoặc feature request  
+- 🎓 **Hỗ trợ giáo dục**: Email để được tư vấn sử dụng trong lớp học
+- 📖 **Tài liệu**: Wiki và documentation chi tiết
+
+---
+
+**🔬 Phòng Thí Nghiệm Thuật Toán MST** - *Học thuật toán một cách trực quan và thú vị*
+
+> Được phát triển với ❤️ cho cộng đồng giáo dục Việt Nam
+
+*Cập nhật: Tháng 12, 2024*
